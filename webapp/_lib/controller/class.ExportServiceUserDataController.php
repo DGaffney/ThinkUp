@@ -117,7 +117,7 @@ This zip archive contains all the data related to a specific service user gather
 Commands to run:
 
 ";
-        try {
+        // try {
             //begin export
             self::appendToReadme($import_instructions);
 
@@ -129,17 +129,19 @@ Commands to run:
             self::exportPostsRepliesRetweetsFavoritesMentions($username, $user_id, $service);
             self::exportFollowsAndFollowers($user_id, $service);
             self::exportFollowerCountHistory($user_id, $service);
+            self::appendToReadme("COLUMN INFORMATION\n=====================");
+            self::getColumnInformation();
             return true;
-        } catch(Exception $e) {
-            $err = $e->getMessage();
-            if (preg_match("/Can't create\/write to file/", $err) || preg_match("/Can\'t get stat of/", $err)) {
-                // a file open perm issue?
-                $this->addToView('mysql_file_perms', true);
-            } else {
-                $this->addToView('grant_perms', true);
-            }
-            return false;
-        }
+        // } catch(Exception $e) {
+        //     $err = $e->getMessage();
+        //     if (preg_match("/Can't create\/write to file/", $err) || preg_match("/Can\'t get stat of/", $err)) {
+        //         // a file open perm issue?
+        //         $this->addToView('mysql_file_perms', true);
+        //     } else {
+        //         $this->addToView('grant_perms', true);
+        //     }
+        //     return false;
+        // }
     }
 
     protected function generateZipFile() {
@@ -261,7 +263,23 @@ Commands to run:
 ";
         self::appendToReadme($import_instructions);
     }
-
+    
+    // Using a set of the known tables that will be exported, type up a manifest of the columns for the user, append into the readme.
+    protected function getColumnInformation(){
+      $tables = array("tu_favorites", "tu_encoded_locations", "tu_posts", "tu_links", "tu_users", "tu_follows", "tu_users", "tu_follower_count");
+      
+      foreach ($tables as $table) {
+        $post_dao = DAOFactory::getDAO('PostDAO');
+        //This above line is hacky - the problem is that I'm not sure as to how to send mysql calls directly 
+        //from this level of abstraction - have to pass through a DAO first afaik...
+        $column_info = $post_dao->getColumnInformation($table);
+        self::appendToReadme("\n\n".$table."\n====================\n\n");
+        foreach($column_info as $key=>$value) { 
+            self::appendToReadme($key.": ".$value."\n"); 
+        }        
+      }
+    }
+    
     protected function appendToReadme($text) {
         $handle = fopen($this->readme_file, "a");
         fwrite($handle, $text);

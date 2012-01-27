@@ -88,6 +88,17 @@ abstract class PDODAO {
         $this->logger = Logger::getInstance($log_location);
     }
 
+    public function getColumnInformation($table){
+      $q = "show full columns from $table";
+      $ps = $this->execute($q);
+      $post_rows = $this->fetchAllAndClose($ps);
+      $column_information = array();
+      foreach ($post_rows as $row) {
+        $column_information[$row[0]] = $row[8];
+      }
+      return $column_information;
+    }
+
     /**
      * Set the logger instance used by the DAO.
      * @param Logger $logger
@@ -228,6 +239,7 @@ abstract class PDODAO {
         //Alias for getUpdateCount
         return $this->getUpdateCount($ps);
     }
+    
     /**
      * Gets a single row and closes cursor.
      * @param PDOStatement $ps
